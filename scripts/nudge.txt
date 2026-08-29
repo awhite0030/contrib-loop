@@ -1,0 +1,1 @@
+Do not wait for replies and do not ask questions. Proceed with the best available interpretation right now, document any assumptions in the final summary, and bring the session to completion. If the issue cannot be reproduced or is already fixed, finish with a summary saying so without changing code.

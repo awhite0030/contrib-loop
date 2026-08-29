@@ -1,0 +1,99 @@
+{
+  "globals": {
+    "daily_task_cap": 92,
+    "session_timeout_hours": 6
+  },
+  "tapflow": {
+    "upstream": "jo-duchan/tapflow",
+    "fork": "awhite0030/tapflow",
+    "base_branch": "main",
+    "jules_branch": "main",
+    "budget": 4,
+    "max_prs_per_day": 3,
+    "claim_comment": false,
+    "discovery": {
+      "labels": ["bug", "help wanted", "good first issue"],
+      "exclude_labels": ["requires: macOS"]
+    }
+  },
+  "nanocoder": {
+    "upstream": "Nano-Collective/nanocoder",
+    "fork": "awhite0030/nanocoder",
+    "base_branch": "main",
+    "jules_branch": "main",
+    "budget": 4,
+    "max_prs_per_day": 3,
+    "claim_comment": true,
+    "discovery": {
+      "labels": ["bug", "good first issue"],
+      "exclude_labels": []
+    }
+  },
+  "mteb": {
+    "upstream": "embeddings-benchmark/mteb",
+    "fork": "awhite0030/mteb",
+    "base_branch": "main",
+    "jules_branch": "main",
+    "budget": 4,
+    "max_prs_per_day": 3,
+    "claim_comment": false,
+    "max_pr_body_chars": 2000,
+    "discovery": {
+      "labels": ["good first issue", "repro", "help wanted"],
+      "exclude_labels": ["priority::low", "new dataset", "new model"]
+    }
+  },
+  "updatecli": {
+    "upstream": "updatecli/updatecli",
+    "fork": "awhite0030/updatecli",
+    "base_branch": "main",
+    "jules_branch": "main",
+    "budget": 4,
+    "max_prs_per_day": 3,
+    "claim_comment": false,
+    "discovery": {
+      "labels": ["bug"],
+      "exclude_labels": []
+    }
+  },
+  "opennutritracker": {
+    "upstream": "simonoppowa/OpenNutriTracker",
+    "fork": "awhite0030/OpenNutriTracker",
+    "base_branch": "develop",
+    "jules_branch": "develop",
+    "budget": 2,
+    "max_prs_per_day": 2,
+    "claim_comment": false,
+    "discovery": {
+      "labels": ["bug", "help wanted", "good first issue"],
+      "exclude_labels": []
+    }
+  },
+  "kana-dojo": {
+    "upstream": "lingdojo/kana-dojo",
+    "fork": "awhite0030/kana-dojo",
+    "base_branch": "main",
+    "jules_branch": "main",
+    "budget": 8,
+    "max_prs_per_day": 4,
+    "claim_comment": true,
+    "claim_verify": true,
+    "discovery": {
+      "labels": ["community", "good first issue", "beginner-friendly", "up-for-grabs", "help wanted"],
+      "exclude_labels": []
+    }
+  },
+  "formae": {
+    "upstream": "platform-engineering-labs/formae",
+    "fork": "awhite0030/formae",
+    "base_branch": "main",
+    "jules_branch": "main",
+    "budget": 2,
+    "max_prs_per_day": 1,
+    "claim_comment": false,
+    "discovery": {
+      "labels": ["good first issue"],
+      "exclude_labels": []
+    }
+  }
+}
