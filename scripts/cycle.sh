@@ -136,7 +136,7 @@ if [ -z "$VALIDATE_TARGET" ]; then
       issues_json=$(jq -c 'add | unique_by(.number)' <<<"[$issues_json, $batch]")
     done <<<"$(cfg_target_labels "$target")"
     handled=$(jq -c --arg t "$target" \
-      '[(.targets[$t].tasks // {}) | keys[], (.targets[$t].prs // {}) | keys[]] | unique' <<<"$state")
+      '[((.targets[$t].tasks // {}) | keys[]), ((.targets[$t].prs // {}) | keys[])] | unique' <<<"$state")
     excl=$(cfg_target_exclude "$target" | jq -Rsc 'split("\n") | map(select(length > 0))')
     # NB: two chained jq calls - the combined single-call filter behaves
     # differently on the runner's jq 1.7 (returns nothing instead of []).
