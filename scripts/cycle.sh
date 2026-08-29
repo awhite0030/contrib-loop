@@ -24,7 +24,7 @@ if [ "$(jq -r --arg d "$TODAY" 'if .day == $d then "same" else "new" end' <<<"$s
 fi
 
 # --- 1. reconcile sessions for every target --------------------------------------
-for target in $(jq -r 'keys[] | select(startswith("__") | not)' "$CFG_JSON"); do
+for target in $(jq -r 'keys[] | select(. != "globals")' "$CFG_JSON"); do
   for issue in $(jq -r --arg t "$target" '
       (.targets[$t].tasks // {}) | to_entries[]
       | select(.value.status == "dispatched") | .key' <<<"$state"); do
@@ -83,7 +83,7 @@ done
 
 # --- 2. pick one completed fork PR for validation --------------------------------
 VALIDATE_TARGET=""; VALIDATE_ISSUE=""; VALIDATE_PR_URL=""
-for target in $(jq -r 'keys[] | select(startswith("__") | not)' "$CFG_JSON"); do
+for target in $(jq -r 'keys[] | select(. != "globals")' "$CFG_JSON"); do
   hit=$(jq -r --arg t "$target" '
     (.targets[$t].tasks // {}) | to_entries[]
     | select(.value.status == "in_review" and ((.value.upstreamPr // "") == ""))
@@ -103,7 +103,7 @@ if [ -z "$VALIDATE_TARGET" ]; then
   used=$(jules_sessions_last_24h)
   echo "budget: ${used}/${GLOBAL_CAP} sessions in the last 24h"
 
-  for target in $(jq -r 'keys[] | select(startswith("__") | not)' "$CFG_JSON"); do
+  for target in $(jq -r 'keys[] | select(. != "globals")' "$CFG_JSON"); do
     if [ -n "$OVERRIDE_TARGET" ] && [ "$target" != "$OVERRIDE_TARGET" ]; then continue; fi
 
     upstream=$(cfg_target "$target" upstream)

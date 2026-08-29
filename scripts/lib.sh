@@ -17,8 +17,11 @@ cfg_target_exclude() { jq -r --arg id "$1" '.[$id].discovery.exclude_labels | jo
 
 # --- state --------------------------------------------------------------------
 state_get() {
-  gh api "repos/${GITHUB_REPOSITORY}/actions/variables/${STATE_VAR}" --jq .value 2>/dev/null \
-    | jq -cS . 2>/dev/null || echo '{}'
+  local res
+  res=$(gh api "repos/${GITHUB_REPOSITORY}/actions/variables/${STATE_VAR}" --jq .value 2>/dev/null \
+    | jq -cS . 2>/dev/null)
+  [ -n "$res" ] || res='{}'
+  echo "$res"
 }
 
 state_set() {
