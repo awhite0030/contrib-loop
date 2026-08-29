@@ -148,6 +148,7 @@ if [ -z "$VALIDATE_TARGET" ]; then
        | select((.number | tostring) as $n | ($handled | index($n) | not))
        | select((.labels | map(.name)) as $ls | ($excl | all(. as $x | ($ls | index($x) | not))))]'
       <<<"$issues_json")
+    echo "debug[$target]: cand_len=$(printf '%s' "$candidates" | wc -c) cand_head=$(printf '%s' "$candidates" | head -c 60)"
 
     chosen=""
     if [ -n "$OVERRIDE_ISSUE" ]; then
