@@ -138,23 +138,19 @@ if [ -z "$VALIDATE_TARGET" ]; then
     handled=$(jq -c --arg t "$target" \
       '[(.targets[$t].tasks // {}) | keys[], (.targets[$t].prs // {}) | keys[]] | unique' <<<"$state")
     excl=$(cfg_target_exclude "$target" | jq -Rsc 'split("\n") | map(select(length > 0))')
-    stage1=$(jq -c '[.[] | select((.assignees | length) == 0)] | length' <<<"$issues_json")
-    stage2=$(jq -c --argjson handled "$handled" '[.[] | select((.assignees | length) == 0) | select((.number | tostring) as $n | ($handled | index($n) | not))] | length' <<<"$issues_json")
-    stage3=$(jq -c --argjson excl "$excl" '[.[] | select((.assignees | length) == 0) | select((.labels | map(.name)) as $ls | ($excl | all(. as $x | ($ls | index($x) | not))))] | length' <<<"$issues_json")
-    echo "debug[$target]: jq=$(jq --version) stage1=$stage1 stage2=$stage2 stage3=$stage3"
-    candidates=$(jq -c --argjson handled "$handled" --argjson excl "$excl" '
-      [.[]
-       | select((.assignees | length) == 0)
-       | select((.number | tostring) as $n | ($handled | index($n) | not))
-       | select((.labels | map(.name)) as $ls | ($excl | all(. as $x | ($ls | index($x) | not))))]'
-      <<<"$issues_json")
-    echo "debug[$target]: cand_len=$(printf '%s' "$candidates" | wc -c) cand_head=$(printf '%s' "$candidates" | head -c 60)"
+    # NB: two chained jq calls - the combined single-call filter behaves
+    # differently on the runner's jq 1.7 (returns nothing instead of []).
+    candidates=$(jq -c --argjson handled "$handled" '
+      [.[] | select((.assignees | length) == 0)
+           | select((.number | tostring) as $n | ($handled | index($n) | not))]' <<<"$issues_json")
+    candidates=$(jq -c --argjson excl "$excl" '
+      [.[] | select((.labels | map(.name)) as $ls | ($excl | all(. as $x | ($ls | index($x) | not))))]' <<<"$candidates")
 
     chosen=""
     if [ -n "$OVERRIDE_ISSUE" ]; then
-      chosen=$(jq -c --argjson n "$OVERRIDE_ISSUE" '[.[] | select(.number == $n)] | first // empty' <<<"$candidates")
+      chosen=$(jq -c --argjson n "$OVERRIDE_ISSUE" '[.[] | select(.number == $n)] | .[0] // empty' <<<"$candidates")
     else
-      chosen=$(jq -c 'sort_by(.createdAt) | first // empty' <<<"$candidates")
+      chosen=$(jq -c 'sort_by(.createdAt) | .[0] // empty' <<<"$candidates")
     fi
     if [ -z "$chosen" ]; then
       echo "dispatch[$target]: no candidates (issues=$(jq length <<<"${issues_json:-[]}") handled=$handled excl=$excl)"
