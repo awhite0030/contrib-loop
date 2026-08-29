@@ -86,7 +86,7 @@ jobs:
           GH_TOKEN: ${{ secrets.PAT }}
           VALIDATE_TARGET: ${{ steps.cycle.outputs.validate_target }}
           VALIDATE_ISSUE: ${{ steps.cycle.outputs.validate_issue }}
-          VALIDATE_PR_URL: ${{ steps.cycle.outputs.validate_pr_url }}
+          VALIDATE_PR_NUMBER: ${{ steps.cycle.outputs.validate_pr_number }}
           PR_TREE: pr-tree
         run: bash scripts/validate_and_open_pr.sh
 

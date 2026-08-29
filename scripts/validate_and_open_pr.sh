@@ -8,26 +8,25 @@ set -euo pipefail
 
 TARGET="${VALIDATE_TARGET:?}"
 ISSUE="${VALIDATE_ISSUE:?}"
-PR_URL="${VALIDATE_PR_URL:?}"          # fork PR url
+PR_NUM="${VALIDATE_PR_NUMBER:?}"        # fork PR number
 PR_TREE="${PR_TREE:-pr-tree}"
 UPSTREAM=$(cfg_target "$TARGET" upstream)
 FORK=$(cfg_target "$TARGET" fork)
 PR_BASE=$(cfg_target "$TARGET" base_branch); PR_BASE=${PR_BASE:-main}
 MAX_BODY=$(cfg_target "$TARGET" max_pr_body_chars)
 
-pr_num=${PR_URL##*/}
-pr_json=$(gh api "repos/${FORK}/pulls/${pr_num}")
+pr_json=$(gh api "repos/${FORK}/pulls/${PR_NUM}")
 pr_branch=$(jq -r '.head.ref' <<<"$pr_json")
 fork_owner=${FORK%%/*}
 pr_title=$(jq -r '.title' <<<"$pr_json")
 pr_body=$(jq -r '.body // ""' <<<"$pr_json")
 
 # --- validate in the PR tree -----------------------------------------------------
-echo "::group::Validate ${TARGET} (fork PR #${pr_num}, branch ${pr_branch})"
+echo "::group::Validate ${TARGET} (fork PR #${PR_NUM}, branch ${pr_branch})"
 if ! bash "scripts/validate/${TARGET}.sh" "$PR_TREE"; then
   echo "::endgroup::"
-  echo "validation FAILED for ${TARGET} fork PR #${pr_num} - closing"
-  gh pr close "$pr_num" -R "$FORK" \
+  echo "validation FAILED for ${TARGET} fork PR #${PR_NUM} - closing"
+  gh pr close "$PR_NUM" -R "$FORK" \
     --comment "Automated validation failed; closing. The loop will pick the next task." || true
   state=$(state_get)
   state=$(jq -c --arg t "$TARGET" --arg i "$ISSUE" '.targets[$t].tasks[$i].status = "validation_failed"' <<<"$state")
@@ -79,7 +78,7 @@ prs_today=$(jq -r --arg t "$TARGET" --arg d "$(date -u +%F)" \
   'if .day == $d then (.prsDay[$t] // 0) else 0 end' <<<"$(state_get)")
 pr_cap=$(cfg_target "$TARGET" max_prs_per_day)
 if [ "${prs_today:-0}" -ge "${pr_cap:-0}" ]; then
-  echo "PR cap for ${TARGET} reached today (${prs_today}/${pr_cap}) - keeping fork PR #${pr_num} open for tomorrow"
+  echo "PR cap for ${TARGET} reached today (${prs_today}/${pr_cap}) - keeping fork PR #${PR_NUM} open for tomorrow"
   exit 0
 fi
 

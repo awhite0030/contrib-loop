@@ -247,6 +247,7 @@ if [ -n "$VALIDATE_TARGET" ]; then
     echo "validate_issue=${VALIDATE_ISSUE}"
     echo "validate_fork=${v_fork}"
     echo "validate_branch=${v_branch}"
+    echo "validate_pr_number=${v_pr_num}"
   } >> "${GITHUB_OUTPUT:-/dev/null}"
   echo "next: validate ${VALIDATE_TARGET} issue #${VALIDATE_ISSUE} (branch ${v_branch})"
 else
