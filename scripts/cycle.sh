@@ -7,6 +7,7 @@ set -euo pipefail
 cd "${GITHUB_WORKSPACE:-.}"
 
 . scripts/lib.sh
+load_config
 
 TODAY=$(date -u +%F)
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -15,7 +16,6 @@ TIMEOUT_H=$(cfg_globals session_timeout_hours); TIMEOUT_H=${TIMEOUT_H:-6}
 OVERRIDE_TARGET="${OVERRIDE_TARGET:-}"
 OVERRIDE_ISSUE="${OVERRIDE_ISSUE:-}"
 
-load_config
 state=$(state_get)
 
 # --- day rollover: reset per-day counters ---------------------------------------
