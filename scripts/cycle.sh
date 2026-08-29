@@ -138,6 +138,10 @@ if [ -z "$VALIDATE_TARGET" ]; then
     handled=$(jq -c --arg t "$target" \
       '[(.targets[$t].tasks // {}) | keys[], (.targets[$t].prs // {}) | keys[]] | unique' <<<"$state")
     excl=$(cfg_target_exclude "$target" | jq -Rsc 'split("\n") | map(select(length > 0))')
+    stage1=$(jq -c '[.[] | select((.assignees | length) == 0)] | length' <<<"$issues_json")
+    stage2=$(jq -c --argjson handled "$handled" '[.[] | select((.assignees | length) == 0) | select((.number | tostring) as $n | ($handled | index($n) | not))] | length' <<<"$issues_json")
+    stage3=$(jq -c --argjson excl "$excl" '[.[] | select((.assignees | length) == 0) | select((.labels | map(.name)) as $ls | ($excl | all(. as $x | ($ls | index($x) | not))))] | length' <<<"$issues_json")
+    echo "debug[$target]: jq=$(jq --version) stage1=$stage1 stage2=$stage2 stage3=$stage3"
     candidates=$(jq -c --argjson handled "$handled" --argjson excl "$excl" '
       [.[]
        | select((.assignees | length) == 0)
