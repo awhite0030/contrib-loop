@@ -151,7 +151,10 @@ if [ -z "$VALIDATE_TARGET" ]; then
     else
       chosen=$(jq -c 'sort_by(.createdAt) | first // empty' <<<"$candidates")
     fi
-    if [ -z "$chosen" ]; then echo "dispatch[$target]: no candidates"; continue; fi
+    if [ -z "$chosen" ]; then
+      echo "dispatch[$target]: no candidates (issues=$(jq length <<<"${issues_json:-[]}") handled=$handled excl=$excl)"
+      continue
+    fi
 
     issue=$(jq -r .number <<<"$chosen")
     title=$(jq -r .title <<<"$chosen")
