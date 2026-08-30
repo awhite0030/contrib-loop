@@ -8,12 +8,18 @@
     "fork": "awhite0030/tapflow",
     "base_branch": "main",
     "jules_branch": "main",
-    "budget": 4,
+    "budget": 8,
     "max_prs_per_day": 3,
     "claim_comment": false,
     "discovery": {
-      "labels": ["bug", "help wanted", "good first issue"],
-      "exclude_labels": ["requires: macOS"]
+      "labels": [
+        "bug",
+        "help wanted",
+        "good first issue"
+      ],
+      "exclude_labels": [
+        "requires: macOS"
+      ]
     }
   },
   "nanocoder": {
@@ -21,11 +27,14 @@
     "fork": "awhite0030/nanocoder",
     "base_branch": "main",
     "jules_branch": "main",
-    "budget": 4,
+    "budget": 8,
     "max_prs_per_day": 3,
     "claim_comment": true,
     "discovery": {
-      "labels": ["bug", "good first issue"],
+      "labels": [
+        "bug",
+        "good first issue"
+      ],
       "exclude_labels": []
     }
   },
@@ -34,13 +43,21 @@
     "fork": "awhite0030/mteb",
     "base_branch": "main",
     "jules_branch": "main",
-    "budget": 4,
+    "budget": 8,
     "max_prs_per_day": 3,
     "claim_comment": false,
     "max_pr_body_chars": 2000,
     "discovery": {
-      "labels": ["good first issue", "repro", "help wanted"],
-      "exclude_labels": ["priority::low", "new dataset", "new model"]
+      "labels": [
+        "good first issue",
+        "repro",
+        "help wanted"
+      ],
+      "exclude_labels": [
+        "priority::low",
+        "new dataset",
+        "new model"
+      ]
     }
   },
   "updatecli": {
@@ -48,11 +65,13 @@
     "fork": "awhite0030/updatecli",
     "base_branch": "main",
     "jules_branch": "main",
-    "budget": 4,
+    "budget": 6,
     "max_prs_per_day": 3,
     "claim_comment": false,
     "discovery": {
-      "labels": ["bug"],
+      "labels": [
+        "bug"
+      ],
       "exclude_labels": []
     }
   },
@@ -61,11 +80,15 @@
     "fork": "awhite0030/OpenNutriTracker",
     "base_branch": "develop",
     "jules_branch": "develop",
-    "budget": 2,
+    "budget": 4,
     "max_prs_per_day": 2,
     "claim_comment": false,
     "discovery": {
-      "labels": ["bug", "help wanted", "good first issue"],
+      "labels": [
+        "bug",
+        "help wanted",
+        "good first issue"
+      ],
       "exclude_labels": []
     }
   },
@@ -74,12 +97,18 @@
     "fork": "awhite0030/kana-dojo",
     "base_branch": "main",
     "jules_branch": "main",
-    "budget": 8,
-    "max_prs_per_day": 4,
+    "budget": 16,
+    "max_prs_per_day": 6,
     "claim_comment": true,
     "claim_verify": true,
     "discovery": {
-      "labels": ["community", "good first issue", "beginner-friendly", "up-for-grabs", "help wanted"],
+      "labels": [
+        "community",
+        "good first issue",
+        "beginner-friendly",
+        "up-for-grabs",
+        "help wanted"
+      ],
       "exclude_labels": []
     }
   },
@@ -89,10 +118,12 @@
     "base_branch": "main",
     "jules_branch": "main",
     "budget": 0,
-    "max_prs_per_day": 1,
+    "max_prs_per_day": 0,
     "claim_comment": false,
     "discovery": {
-      "labels": ["good first issue"],
+      "labels": [
+        "good first issue"
+      ],
       "exclude_labels": []
     }
   }

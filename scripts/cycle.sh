@@ -150,6 +150,61 @@ if [ -z "$VALIDATE_TARGET" ]; then
     [ -n "$OVERRIDE_TARGET" ] && pr_cap=$((pr_cap + prs_today))
     if [ "${prs_today:-0}" -ge "${pr_cap:-0}" ]; then echo "dispatch[$target]: PR cap for today reached"; continue; fi
 
+    # retry first: a validation-failed task gets one more session on its own branch
+    retry_issue=$(jq -r --arg t "$target" '
+      [(.targets[$t].tasks // {}) | to_entries[]
+       | select(.value.status == "validation_retry")] | .[0].key // ""' <<<"$state")
+    if [ -n "$retry_issue" ]; then
+      retry_fork_pr=$(jq -r --arg t "$target" --arg i "$retry_issue" '.targets[$t].tasks[$i].forkPr // ""' <<<"$state")
+      retry_branch=$(gh api "repos/${fork}/pulls/${retry_fork_pr##*/}" --jq .head.ref 2>/dev/null || echo "")
+      if [ -z "$retry_branch" ]; then
+        echo "dispatch[$target]: retry of #$retry_issue impossible (branch gone) - marking failed"
+        state=$(jq -c --arg t "$target" --arg i "$retry_issue" '.targets[$t].tasks[$i].status = "validation_failed"' <<<"$state")
+        continue
+      fi
+      title=$(gh api "repos/${fork}/pulls/${retry_fork_pr##*/}" --jq .title)
+      echo "dispatch[$target]: RETRY of issue #$retry_issue on branch $retry_branch"
+      gh api -X POST "repos/${fork}/merge-upstream" -F branch="$retry_branch" >/dev/null 2>&1 || true
+      body_file=$(mktemp); prompt_file=$(mktemp); payload_file=$(mktemp)
+      gh issue view -R "$upstream" "$retry_issue" --json body --jq '.body // ""' | head -c 6000 > "$body_file"
+      {
+        cat prompt_template_retry.md
+        printf '\n--- Issue #%s: %s\n' "$retry_issue" "$title"
+        printf 'URL: https://github.com/%s/issues/%s\n\nIssue body:\n' "$upstream" "$retry_issue"
+        cat "$body_file"
+        printf '\n\n--- Validation commands (must pass before you finish) ---\n'
+        cat "scripts/validate/${target}.sh"
+        printf '\n\n--- Repository rules ---\n'
+        cat "rules/${target}.md"
+      } > "$prompt_file"
+      jq -n --rawfile prompt "$prompt_file" \
+        --arg src "sources/github/${fork}" \
+        --arg title "Retry fix: ${title}" \
+        --arg branch "$retry_branch" \
+        '{
+          prompt: $prompt,
+          sourceContext: { source: $src, githubRepoContext: { startingBranch: $branch } },
+          requirePlanApproval: false,
+          automationMode: "AUTO_CREATE_PR",
+          title: $title
+        }' > "$payload_file"
+      resp=$(jules_create_session "$payload_file")
+      session_name=$(jq -r '.name // empty' <<<"$resp")
+      if [ -z "$session_name" ]; then
+        echo "dispatch[$target]: ERROR Jules API: $(jq -r '.error.message // .' <<<"$resp")"
+        rm -f "$body_file" "$prompt_file" "$payload_file"
+        continue
+      fi
+      sid=${session_name##*/}; session_url=$(jq -r '.url // empty' <<<"$resp")
+      echo "dispatch[$target]: retry session $sid ($session_url) for issue #$retry_issue"
+      state=$(jq -c --arg t "$target" --arg i "$retry_issue" --arg sid "$sid" --arg ts "$NOW" --arg u "$session_url" \
+        '.targets[$t].tasks[$i].sessionId = $sid | .targets[$t].tasks[$i].ts = $ts
+         | .targets[$t].tasks[$i].status = "dispatched" | .targets[$t].tasks[$i].sessionUrl = $u
+         | .dispatchedDay[$t] = ((.dispatchedDay[$t] // 0) + 1)' <<<"$state")
+      rm -f "$body_file" "$prompt_file" "$payload_file"
+      continue
+    fi
+
     # discovery: oldest open unassigned issue with any wanted label, not yet handled
     issues_json="[]"
     while IFS= read -r l; do

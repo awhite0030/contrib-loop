@@ -42,11 +42,22 @@ pr_body="$clean_body"
 echo "::group::Validate ${TARGET} (fork PR #${PR_NUM}, branch ${pr_branch})"
 if ! bash "scripts/validate/${TARGET}.sh" "$PR_TREE"; then
   echo "::endgroup::"
-  echo "validation FAILED for ${TARGET} fork PR #${PR_NUM} - closing"
-  gh pr close "$PR_NUM" -R "$FORK" \
-    --comment "Automated validation failed; closing. The loop will pick the next task." || true
+  retries=$(jq -r --arg t "$TARGET" --arg i "$ISSUE" \
+    '.targets[$t].tasks[$i].retries // 0' <<<"$(state_get)")
+  if [ "${retries:-0}" -ge 1 ]; then
+    echo "validation FAILED again for ${TARGET} fork PR #${PR_NUM} - closing (terminal)"
+    gh pr close "$PR_NUM" -R "$FORK" \
+      --comment "Automated validation failed again; closing. The loop will pick the next task." || true
+    new_status="validation_failed"
+  else
+    echo "validation FAILED for ${TARGET} fork PR #${PR_NUM} - scheduling a retry session on the same branch"
+    gh pr comment "$PR_NUM" -R "$FORK" \
+      --body "Automated validation failed. A follow-up fix session will continue from this branch." || true
+    new_status="validation_retry"
+  fi
   state=$(state_get)
-  state=$(jq -c --arg t "$TARGET" --arg i "$ISSUE" '.targets[$t].tasks[$i].status = "validation_failed"' <<<"$state")
+  state=$(jq -c --arg t "$TARGET" --arg i "$ISSUE" --arg s "$new_status" --argjson r "$((retries + 1))" \
+    '.targets[$t].tasks[$i].status = $s | .targets[$t].tasks[$i].retries = $r' <<<"$state")
   state_set "$state"
   exit 1
 fi
