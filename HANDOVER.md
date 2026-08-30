@@ -179,9 +179,11 @@ build-binaries, changelog-fragment, ci, contribution-gate, linear-ticket — и�
 }
 ```
 Статусы задачи: `dispatched → in_review → pr_open → merged`; ветки отказа:
-`validation_failed`, `no_pr`, `failed`, `stuck`, `claim_lost`. Терминальные
+`validation_failed`, `no_pr`, `failed`, `stuck`, `claim_lost`, `upstream_closed`
+(upstream PR закрыли/отклонили — например CLA-ботом formae). Терминальные
 статусы НЕ ретраятся автоматически (анти-зацикливание); повтор — вручную
 (`target` + `issue` в dispatch, при override лимиты раздвигаются).
+Reconcile также следит за судьбой открытых upstream-PR (merged/closed).
 PR-е prime-agent параллельно трекаются в status полей того же формата.
 
 ## 7. Бюджеты (где менять)
