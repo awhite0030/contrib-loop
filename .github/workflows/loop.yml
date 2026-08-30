@@ -49,10 +49,16 @@ jobs:
 
       # --- toolchains for the validation phase (only the validating target) ---
       - name: Setup Node 22
-        if: steps.cycle.outputs.mode == 'validate' && (steps.cycle.outputs.validate_target == 'tapflow' || steps.cycle.outputs.validate_target == 'nanocoder' || steps.cycle.outputs.validate_target == 'kana-dojo')
+        if: steps.cycle.outputs.mode == 'validate' && (steps.cycle.outputs.validate_target == 'tapflow' || steps.cycle.outputs.validate_target == 'nanocoder' || steps.cycle.outputs.validate_target == 'rakazo')
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
+
+      - name: Setup Node 24
+        if: steps.cycle.outputs.mode == 'validate' && steps.cycle.outputs.validate_target == 'clawsweeper'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
 
       - name: Setup Go
         if: steps.cycle.outputs.mode == 'validate' && (steps.cycle.outputs.validate_target == 'updatecli' || steps.cycle.outputs.validate_target == 'formae')
@@ -61,8 +67,12 @@ jobs:
           go-version: '1.25'
 
       - name: Setup uv (Python)
-        if: steps.cycle.outputs.mode == 'validate' && steps.cycle.outputs.validate_target == 'mteb'
+        if: steps.cycle.outputs.mode == 'validate' && (steps.cycle.outputs.validate_target == 'mteb' || steps.cycle.outputs.validate_target == 'bernstein')
         uses: astral-sh/setup-uv@v5
+
+      - name: Setup Bun
+        if: steps.cycle.outputs.mode == 'validate' && steps.cycle.outputs.validate_target == 'synara'
+        uses: oven-sh/setup-bun@v2
 
       - name: Setup Flutter
         if: steps.cycle.outputs.mode == 'validate' && steps.cycle.outputs.validate_target == 'opennutritracker'

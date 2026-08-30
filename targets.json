@@ -106,5 +106,71 @@
       ],
       "exclude_labels": []
     }
+  },
+  "bernstein": {
+    "upstream": "sipyourdrink-ltd/bernstein",
+    "fork": "awhite0030/bernstein",
+    "base_branch": "main",
+    "jules_branch": "main",
+    "budget": 10,
+    "max_prs_per_day": 3,
+    "claim_comment": true,
+    "discovery": {
+      "labels": [
+        "good first issue",
+        "up-for-grabs",
+        "help wanted",
+        "bug"
+      ],
+      "exclude_labels": []
+    }
+  },
+  "rakazo": {
+    "upstream": "elie222/rakazo",
+    "fork": "awhite0030/rakazo",
+    "base_branch": "main",
+    "jules_branch": "main",
+    "budget": 8,
+    "max_prs_per_day": 3,
+    "claim_comment": false,
+    "discovery": {
+      "labels": [
+        "bug"
+      ],
+      "exclude_labels": []
+    }
+  },
+  "synara": {
+    "upstream": "Emanuele-web04/synara",
+    "fork": "awhite0030/synara",
+    "base_branch": "main",
+    "jules_branch": "main",
+    "budget": 6,
+    "max_prs_per_day": 3,
+    "claim_comment": false,
+    "discovery": {
+      "labels": [
+        "bug"
+      ],
+      "exclude_labels": []
+    }
+  },
+  "clawsweeper": {
+    "upstream": "openclaw/clawsweeper",
+    "fork": "awhite0030/clawsweeper",
+    "base_branch": "main",
+    "jules_branch": "main",
+    "budget": 2,
+    "max_prs_per_day": 1,
+    "claim_comment": false,
+    "discovery": {
+      "labels": [
+        "clawsweeper:queueable-fix"
+      ],
+      "exclude_labels": [
+        "clawsweeper:no-new-fix-pr",
+        "clawsweeper:linked-pr-open"
+      ]
+    }
   }
 }
