@@ -25,6 +25,7 @@ fi
 
 # --- 1. reconcile sessions for every target --------------------------------------
 for target in $(jq -r 'keys[] | select(. != "globals")' "$CFG_JSON"); do
+  upstream=$(cfg_target "$target" upstream)
   for issue in $(jq -r --arg t "$target" '
       (.targets[$t].tasks // {}) | to_entries[]
       | select(.value.status == "dispatched") | .key' <<<"$state"); do
@@ -79,6 +80,28 @@ for target in $(jq -r 'keys[] | select(. != "globals")' "$CFG_JSON"); do
         ;;
     esac
   done
+
+  # track the fate of upstream PRs (merged / closed)
+  for issue in $(jq -r --arg t "$target" '
+      [(.targets[$t].tasks // {}) | to_entries[]
+       | select(.value.status == "pr_open") | .key]' <<<"$state"); do
+    up=$(jq -r --arg t "$target" --arg i "$issue" '.targets[$t].tasks[$i].upstreamPr // ""' <<<"$state")
+    [ -n "$up" ] && [ "$up" != "null" ] || continue
+    up_num=${up##*/}
+    st=$(gh api "repos/${upstream}/pulls/${up_num}" \
+      --jq 'if .merged then "merged" else .state end' 2>/dev/null || echo unknown)
+    case "$st" in
+      merged)
+        echo "reconcile[$target] #$issue: upstream PR MERGED"
+        state=$(jq -c --arg t "$target" --arg i "$issue" \
+          '.targets[$t].tasks[$i].status = "merged"' <<<"$state") ;;
+      closed)
+        echo "reconcile[$target] #$issue: upstream PR closed"
+        state=$(jq -c --arg t "$target" --arg i "$issue" \
+          '.targets[$t].tasks[$i].status = "upstream_closed"' <<<"$state") ;;
+    esac
+  done
+
 done
 
 # --- 2. pick one completed fork PR for validation --------------------------------
