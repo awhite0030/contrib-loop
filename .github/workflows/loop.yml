@@ -91,7 +91,9 @@ jobs:
         run: bash scripts/validate_and_open_pr.sh
 
       - name: Chain the next run
-        if: steps.cycle.outputs.mode != 'idle'
+        # Chain even when validation failed (the cycle itself succeeded); if the
+        # cycle step crashed, do not chain - the hourly cron is the backstop.
+        if: always() && steps.cycle.outcome == 'success' && steps.cycle.outputs.mode != 'idle'
         env:
           GH_TOKEN: ${{ secrets.PAT }}
         run: gh workflow run loop.yml --repo "$GITHUB_REPOSITORY" --ref main
