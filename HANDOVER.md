@@ -179,7 +179,7 @@ build-binaries, changelog-fragment, ci, contribution-gate, linear-ticket — и�
 }
 ```
 Статусы задачи: `dispatched → in_review → pr_open → merged`; ветки отказа:
-`validation_failed`, `no_pr`, `failed`, `stuck`, `claim_lost`, `upstream_closed`
+`validation_failed` (после 1 автоповтора), `no_pr`, `failed`, `stuck`, `claim_lost`, `upstream_closed`
 (upstream PR закрыли/отклонили — например CLA-ботом formae). Терминальные
 статусы НЕ ретраятся автоматически (анти-зацикливание); повтор — вручную
 (`target` + `issue` в dispatch, при override лимиты раздвигаются).
