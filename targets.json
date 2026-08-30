@@ -97,7 +97,7 @@
     "fork": "awhite0030/kana-dojo",
     "base_branch": "main",
     "jules_branch": "main",
-    "budget": 16,
+    "budget": 0,
     "max_prs_per_day": 6,
     "claim_comment": true,
     "claim_verify": true,

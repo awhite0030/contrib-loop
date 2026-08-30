@@ -110,11 +110,21 @@ if [ "${prs_today:-0}" -ge "${pr_cap:-0}" ]; then
   exit 0
 fi
 
-upstream_url=$(gh pr create -R "$UPSTREAM" \
+if ! upstream_url=$(gh pr create -R "$UPSTREAM" \
   --base "$PR_BASE" \
   --head "${fork_owner}:${pr_branch}" \
   --title "$pr_title" \
-  --body-file "$body_file")
+  --body-file "$body_file"); then
+  # Creation refused (interaction limits / block / cap). Mark and move on -
+  # do not crash-loop on the same task.
+  echo "upstream PR creation FAILED: ${upstream_url}"
+  state=$(state_get)
+  state=$(jq -c --arg t "$TARGET" --arg i "$ISSUE" \
+    '.targets[$t].tasks[$i].status = "pr_create_failed"' <<<"$state")
+  state_set "$state"
+  echo "task marked pr_create_failed - continuing with other targets"
+  exit 0
+fi
 echo "upstream PR created: $upstream_url"
 
 state=$(state_get)
