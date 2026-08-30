@@ -83,8 +83,8 @@ for target in $(jq -r 'keys[] | select(. != "globals")' "$CFG_JSON"); do
 
   # track the fate of upstream PRs (merged / closed)
   for issue in $(jq -r --arg t "$target" '
-      [(.targets[$t].tasks // {}) | to_entries[]
-       | select(.value.status == "pr_open") | .key]' <<<"$state"); do
+      (.targets[$t].tasks // {}) | to_entries[]
+      | select(.value.status == "pr_open") | .key' <<<"$state"); do
     up=$(jq -r --arg t "$target" --arg i "$issue" '.targets[$t].tasks[$i].upstreamPr // ""' <<<"$state")
     [ -n "$up" ] && [ "$up" != "null" ] || continue
     up_num=${up##*/}
