@@ -92,26 +92,6 @@
       "exclude_labels": []
     }
   },
-  "kana-dojo": {
-    "upstream": "lingdojo/kana-dojo",
-    "fork": "awhite0030/kana-dojo",
-    "base_branch": "main",
-    "jules_branch": "main",
-    "budget": 0,
-    "max_prs_per_day": 6,
-    "claim_comment": true,
-    "claim_verify": true,
-    "discovery": {
-      "labels": [
-        "community",
-        "good first issue",
-        "beginner-friendly",
-        "up-for-grabs",
-        "help wanted"
-      ],
-      "exclude_labels": []
-    }
-  },
   "formae": {
     "upstream": "platform-engineering-labs/formae",
     "fork": "awhite0030/formae",
