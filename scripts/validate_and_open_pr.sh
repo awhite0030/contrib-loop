@@ -21,6 +21,23 @@ fork_owner=${FORK%%/*}
 pr_title=$(jq -r '.title' <<<"$pr_json")
 pr_body=$(jq -r '.body // ""' <<<"$pr_json")
 
+# Strip Jules provenance footer from the fork PR body (and sync the edit back
+# to the fork) so it never reaches the upstream PR.
+clean_body=$(jq -rn --arg b "$pr_body" '
+  $b | split("\n")
+  | map(select(
+      (test("created automatically by Jules"; "i") | not)
+      and (test("jules[.]google[.]com/task") | not)
+      and (test("^---\\s*$") | not)))
+  | join("\n")
+  | gsub("\\n{3,}"; "\n\n")')
+if [ "$clean_body" != "$pr_body" ]; then
+  tmp_body=$(mktemp); printf '%s' "$clean_body" > "$tmp_body"
+  gh pr edit "$PR_NUM" -R "$FORK" --body-file "$tmp_body" >/dev/null 2>&1 || true
+  rm -f "$tmp_body"
+fi
+pr_body="$clean_body"
+
 # --- validate in the PR tree -----------------------------------------------------
 echo "::group::Validate ${TARGET} (fork PR #${PR_NUM}, branch ${pr_branch})"
 if ! bash "scripts/validate/${TARGET}.sh" "$PR_TREE"; then
