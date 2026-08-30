@@ -117,8 +117,8 @@
     "fork": "awhite0030/formae",
     "base_branch": "main",
     "jules_branch": "main",
-    "budget": 0,
-    "max_prs_per_day": 0,
+    "budget": 2,
+    "max_prs_per_day": 1,
     "claim_comment": false,
     "discovery": {
       "labels": [
