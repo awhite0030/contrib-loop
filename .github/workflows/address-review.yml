@@ -35,6 +35,14 @@ jobs:
   trigger:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
+      GH_TOKEN: ${{ secrets.PAT }}
+      TARGET: ${{ github.event.inputs.target }}
+      FORK_OWNER: ${{ github.event.inputs.fork_owner }}
+      PR_NUM: ${{ github.event.inputs.fork_pr_number }}
+      ISSUE_NUM: ${{ github.event.inputs.issue_number }}
+      REVIEW_FILE: ${{ github.event.inputs.review_file }}
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -42,19 +50,10 @@ jobs:
           persist-credentials: false
 
       - name: Dispatch Jules session
-        env:
-          JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
-          GH_TOKEN: ${{ secrets.PAT }}
         run: |
           set -euo pipefail
           . scripts/lib.sh
           load_config
-          TARGET='${{ github.event.inputs.target }}'
-          FORK_OWNER='${{ github.event.inputs.fork_owner }}'
-          PR_NUM='${{ github.event.inputs.fork_pr_number }}'
-          ISSUE_NUM='${{ github.event.inputs.issue_number }}'
-          REVIEW_FILE='${{ github.event.inputs.review_file }}'
-
           UPSTREAM=$(cfg_target "$TARGET" upstream)
           pr_branch=$(gh api "repos/${FORK_OWNER}/${TARGET}/pulls/${PR_NUM}" --jq .head.ref)
           echo "target=$TARGET upstream=$UPSTREAM fork_pr=#$PR_NUM branch=$pr_branch"
@@ -100,6 +99,4 @@ jobs:
           rm -f "$body_file" "$prompt_file" "$payload_file"
 
       - name: Chain next loop
-        env:
-          GH_TOKEN: ${{ secrets.PAT }}
         run: gh workflow run loop.yml --repo "$GITHUB_REPOSITORY" --ref main
