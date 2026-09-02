@@ -49,6 +49,16 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Echo inputs
+        run: |
+          echo "TARGET=$TARGET"
+          echo "FORK_OWNER=$FORK_OWNER"
+          echo "PR_NUM=$PR_NUM"
+          echo "ISSUE_NUM=$ISSUE_NUM"
+          echo "REVIEW_FILE=$REVIEW_FILE"
+          echo "JULES_API_KEY length=${#JULES_API_KEY}"
+          ls -la "$REVIEW_FILE"
+
       - name: Dispatch Jules session
         run: |
           set -euo pipefail
