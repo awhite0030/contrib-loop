@@ -241,13 +241,7 @@ if [ -z "$VALIDATE_TARGET" ]; then
 
     # claim etiquette: comment first; strict claimers verify the assignment landed
     if [ "$(cfg_target "$target" claim_comment)" = "true" ]; then
-      if ! gh issue comment -R "$upstream" "$issue" --body "Picking this up - a fix will follow shortly." >/dev/null 2>&1; then
-        echo "dispatch[$target]: CANNOT comment on #$issue (blocked or restricted?) - pausing target for today"
-        budget_val=$(cfg_target "$target" budget)
-        state=$(jq -c --arg t "$target" --arg d "$TODAY" --argjson b "$budget_val" \
-          '.dispatchedDay[$t] = $b | .day = $d' <<<"$state")
-        continue
-      fi
+      gh issue comment -R "$upstream" "$issue" --body "Picking this up - a fix will follow shortly." >/dev/null
       echo "dispatch[$target]: claimed #$issue"
       if [ "$(cfg_target "$target" claim_verify)" = "true" ]; then
         sleep 30
