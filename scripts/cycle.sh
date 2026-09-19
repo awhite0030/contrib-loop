@@ -104,7 +104,37 @@ for target in $(jq -r 'keys[] | select(. != "globals")' "$CFG_JSON"); do
 
 done
 
-# --- 2. pick one completed fork PR for validation --------------------------------
+# --- 2. auto-fold review-fix PRs into their original branches --------------------
+# Jules review sessions open NEW fork PRs (API cannot push to an existing
+# branch). Fold them back so the upstream PR updates in place.
+for target in $(jq -r 'keys[] | select(. != "globals")' "$CFG_JSON"); do
+  fork=$(cfg_target "$target" fork)
+  # original fork PRs that upstream sees (they have an upstreamPr recorded)
+  for issue in $(jq -r --arg t "$target" '
+      (.targets[$t].tasks // {}) | to_entries[]
+      | select((.value.upstreamPr // "") != "" and (.value.folded // 0) == 0)
+      | .key' <<<"$state"); do
+    orig_fork_pr=$(jq -r --arg t "$target" --arg i "$issue" \
+      '.targets[$t].tasks[$i].forkPr // ""' <<<"$state")
+    [ -n "$orig_fork_pr" ] || continue
+    orig_num=${orig_fork_pr##*/}
+    # find a newer fork PR whose branch contains the fix (created after the original)
+    fix_num=$(gh pr list -R "$fork" --state open --limit 100 \
+      --json number,createdAt,headRefOid 2>/dev/null \
+      | jq -r --argjson orig "$orig_num" '
+          [.[] | select(.number > $orig)] | .[0].number // empty')
+    if [ -n "$fix_num" ]; then
+      echo "fold[$target]: issue #$issue - folding fork PR #$fix_num into #$orig_num"
+      gh workflow run fold-fix.yml --repo "${GITHUB_REPOSITORY}" --ref main \
+        -f target="$target" -f fork_pr_number="$orig_num" -f fix_pr_number="$fix_num" \
+        && state=$(jq -c --arg t "$target" --arg i "$issue" \
+             '.targets[$t].tasks[$i].folded = 1' <<<"$state") \
+        || echo "fold[$target]: WARNING fold dispatch failed"
+    fi
+  done
+done
+
+# --- 3. pick one completed fork PR for validation --------------------------------
 VALIDATE_TARGET=""; VALIDATE_ISSUE=""; VALIDATE_PR_URL=""
 for target in $(jq -r 'keys[] | select(. != "globals")' "$CFG_JSON"); do
   hit=$(jq -r --arg t "$target" '

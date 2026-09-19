@@ -1,0 +1,42 @@
+name: fold fix pr
+
+# Manual: after a review-fix session produced a NEW fork PR, fold its commits
+# back into the ORIGINAL PR branch so the upstream PR updates in place.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target id (e.g. nanocoder)'
+        required: true
+      fork_pr_number:
+        description: 'ORIGINAL fork PR number (the one upstream sees)'
+        required: true
+      fix_pr_number:
+        description: 'NEW fork PR number with the review fixes'
+        required: true
+
+concurrency:
+  group: fold-fix
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  fold:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ secrets.PAT }}
+      TARGET: ${{ github.event.inputs.target }}
+      FORK_PR: ${{ github.event.inputs.fork_pr_number }}
+      FIX_PR: ${{ github.event.inputs.fix_pr_number }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Fold fix commits into original branch
+        run: bash scripts/fold_fix_pr.sh awhite0030 "$TARGET" "$FORK_PR" "$FIX_PR"
