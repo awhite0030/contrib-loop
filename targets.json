@@ -107,24 +107,6 @@
       "exclude_labels": []
     }
   },
-  "bernstein": {
-    "upstream": "sipyourdrink-ltd/bernstein",
-    "fork": "awhite0030/bernstein",
-    "base_branch": "main",
-    "jules_branch": "main",
-    "budget": 10,
-    "max_prs_per_day": 3,
-    "claim_comment": true,
-    "discovery": {
-      "labels": [
-        "good first issue",
-        "up-for-grabs",
-        "help wanted",
-        "bug"
-      ],
-      "exclude_labels": []
-    }
-  },
   "rakazo": {
     "upstream": "elie222/rakazo",
     "fork": "awhite0030/rakazo",
