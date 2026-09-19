@@ -41,11 +41,21 @@ state_set() {
 }
 
 state_prune() {
-  jq -cS '
+  local cutoff7
+  cutoff7=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ)
+  jq -cS --arg cutoff "$cutoff7" '
     .targets //= {}
     | .targets |= with_entries(
         .value.tasks //= {} | .value.posted //= {}
-        | .value.tasks |= (to_entries | sort_by(.value.ts // "") | reverse | .[0:100]
+        | .value.tasks |= with_entries(
+            if (.value.status == "merged" or .value.status == "no_pr" or .value.status == "failed"
+                or .value.status == "validation_failed" or .value.status == "stuck"
+                or .value.status == "target_paused" or .value.status == "upstream_closed"
+                or .value.status == "claim_lost" or .value.status == "pr_create_failed")
+               and ((.value.ts // "") < $cutoff)
+            then .value = {s: .value.status, ts: .value.ts}
+            else . end)
+        | .value.tasks |= (to_entries | sort_by(.value.ts // "") | reverse | .[0:150]
                            | reduce .[] as $e ({}; .[$e.key] = $e.value)))'
 }
 
