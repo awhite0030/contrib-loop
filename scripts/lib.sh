@@ -53,7 +53,7 @@ state_prune() {
                 or .value.status == "target_paused" or .value.status == "upstream_closed"
                 or .value.status == "claim_lost" or .value.status == "pr_create_failed")
                and ((.value.ts // "") < $cutoff)
-            then .value = {s: .value.status, ts: .value.ts}
+            then .value = {status: .value.s // .value.status, ts: .value.ts, compact: true}
             else . end)
         | .value.tasks |= (to_entries | sort_by(.value.ts // "") | reverse | .[0:150]
                            | reduce .[] as $e ({}; .[$e.key] = $e.value)))'

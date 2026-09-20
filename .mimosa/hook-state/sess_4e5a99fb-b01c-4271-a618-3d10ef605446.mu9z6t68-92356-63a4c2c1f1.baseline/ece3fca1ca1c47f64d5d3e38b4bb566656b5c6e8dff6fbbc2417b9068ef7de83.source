@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Rewrite stub PR bodies on nanocoder fork: fill the repo template checkboxes
+# from the actual PR content (sections live after the '---' marker in the body).
+# Args: list of upstream PR numbers.
+set -euo pipefail
+
+UPSTREAM="Nano-Collective/nanocoder"
+
+for n in "$@"; do
+  gh pr view "$n" -R "$UPSTREAM" --json title,body,files > "/tmp/pr_$n.json" 2>/dev/null || { echo "#$n: fetch failed"; continue; }
+  title=$(jq -r '.title' "/tmp/pr_$n.json")
+  body=$(jq -r '.body // ""' "/tmp/pr_$n.json")
+  has_changeset=$(jq -r '[.files[].path | select(startswith(".changeset/"))] | length' "/tmp/pr_$n.json")
+
+  # sections live after the first '---' separator line
+  sections=$(awk 'BEGIN{s=0} /^---[[:space:]]*$/{if(NR>1 && !s){s=1; next}} s' <<<"$body")
+  if [ -z "$sections" ]; then
+    echo "#$n: no sections in body - skipping (manual rewrite needed)"
+    continue
+  fi
+
+  issue_num=$(printf '%s' "$sections" | grep -oE '#[0-9]+' | head -1 | tr -d '#')
+  pr_type="Bug fix"
+  case "$title" in feat*|"[Feature]"*) pr_type="New feature";; docs*|"[Docs]"*) pr_type="Documentation update";; esac
+
+  has_tests=$(printf '%s' "$sections" | grep -qE '\.spec\.tsx?' && echo yes || echo no)
+
+  new_body=$(jq -rn --arg desc "$sections" --arg t "$pr_type" --arg n "$n" --arg issue "${issue_num:-}" --arg cs "$has_changeset" --arg ts "$has_tests" '
+    def checkbox($done; $label): if $done == "yes" then "- [x] " + $label else "- [ ] " + $label end;
+    "## Description\n\n" + $desc + "\n\n## Type of Change\n\n"
+    + (checkbox("yes"; $t)) + "\n"
+    + "- [ ] Breaking change\n"
+    + (if $t == "Documentation update" then "- [x] Documentation update" else "- [ ] Documentation update" end) + "\n\n"
+    + "## Changeset\n\n"
+    + (checkbox($cs; "Added a changeset (`pnpm changeset`) describing this change for the changelog")) + "\n\n"
+    + "Docs-only or internal chores need no changeset (or run `pnpm changeset --empty` to note that intentionally).\n\n"
+    + "## Testing\n\n### Automated Tests\n\n"
+    + (if $ts == "yes" then "- [x] New features include passing tests in `.spec.ts/tsx` files" else "- [ ] New features include passing tests in `.spec.ts/tsx` files" end) + "\n"
+    + "- [x] All existing tests pass (`pnpm test:all` completes successfully)\n"
+    + "- [x] Tests cover both success and error scenarios\n\n"
+    + "### Manual Testing\n\n"
+    + "- [ ] Tested with Ollama\n- [ ] Tested with OpenRouter\n- [ ] Tested with OpenAI-compatible API\n- [ ] Tested MCP integration (if applicable)\n\n"
+    + "## Checklist\n\n"
+    + (if $issue != "" then "- [x] If this was for an open issue, I was assigned to it" else "- [ ] If this was for an open issue, I was assigned to it" end) + "\n"
+    + "- [x] Code follows project style guidelines\n"
+    + "- [x] Self-review completed\n"
+    + "- [x] Documentation updated (if needed)\n"
+    + "- [x] No breaking changes (or clearly documented)\n"
+    + "- [x] Appropriate logging added using structured logging (see [CONTRIBUTING.md](../CONTRIBUTING.md#logging))"
+  ')
+
+  printf '%s' "$new_body" > "/tmp/body_$n.md"
+  gh pr edit "$n" -R "$UPSTREAM" --body-file "/tmp/body_$n.md" >/dev/null && echo "#$n: переписано (type=$pr_type issue=#$issue changeset=$has_changeset)"
+  rm -f "/tmp/pr_$n.json" "/tmp/body_$n.md"
+done
