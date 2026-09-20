@@ -1,0 +1,111 @@
+name: contrib loop
+
+# One cycle: reconcile Jules sessions for all targets, validate one completed
+# fork PR (opening the upstream PR on success), dispatch new tasks within
+# budget, then self-schedule the next run. Hourly cron is only a safety net.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target id to force (optional; see targets.yaml)'
+        required: false
+        default: ''
+      issue:
+        description: 'Issue number to force with the target (optional)'
+        required: false
+        default: ''
+  schedule:
+    - cron: '13 * * * *'
+
+concurrency:
+  group: contrib-loop
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    outputs:
+      mode: ${{ steps.cycle.outputs.mode }}
+      validate_target: ${{ steps.cycle.outputs.validate_target }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Cycle (reconcile + dispatch + plan)
+        id: cycle
+        env:
+          JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
+          GH_TOKEN: ${{ secrets.PAT }}
+          OVERRIDE_TARGET: ${{ github.event.inputs.target }}
+          OVERRIDE_ISSUE: ${{ github.event.inputs.issue }}
+        run: bash scripts/cycle.sh
+
+      # --- toolchains for the validation phase (only the validating target) ---
+      - name: Setup Node 22
+        if: steps.cycle.outputs.mode == 'validate' && (steps.cycle.outputs.validate_target == 'tapflow' || steps.cycle.outputs.validate_target == 'nanocoder' || steps.cycle.outputs.validate_target == 'rakazo')
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Setup Node 24
+        if: steps.cycle.outputs.mode == 'validate' && steps.cycle.outputs.validate_target == 'clawsweeper'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+
+      - name: Setup Go
+        if: steps.cycle.outputs.mode == 'validate' && (steps.cycle.outputs.validate_target == 'updatecli' || steps.cycle.outputs.validate_target == 'formae')
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Setup uv (Python)
+        if: steps.cycle.outputs.mode == 'validate' && (steps.cycle.outputs.validate_target == 'mteb' || steps.cycle.outputs.validate_target == 'bernstein')
+        uses: astral-sh/setup-uv@v5
+
+      - name: Setup Bun
+        if: steps.cycle.outputs.mode == 'validate' && steps.cycle.outputs.validate_target == 'synara'
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup Flutter
+        if: steps.cycle.outputs.mode == 'validate' && steps.cycle.outputs.validate_target == 'opennutritracker'
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.6
+          channel: stable
+
+      - name: Checkout PR head
+        if: steps.cycle.outputs.mode == 'validate'
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: ${{ steps.cycle.outputs.validate_fork }}
+          ref: ${{ steps.cycle.outputs.validate_branch }}
+          path: pr-tree
+          persist-credentials: false
+
+      - name: Validate and open upstream PR
+        if: steps.cycle.outputs.mode == 'validate'
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
+          VALIDATE_TARGET: ${{ steps.cycle.outputs.validate_target }}
+          VALIDATE_ISSUE: ${{ steps.cycle.outputs.validate_issue }}
+          VALIDATE_PR_NUMBER: ${{ steps.cycle.outputs.validate_pr_number }}
+          PR_TREE: pr-tree
+        run: bash scripts/validate_and_open_pr.sh
+
+      - name: Chain the next run
+        # Chain even when validation failed (the cycle itself succeeded); if the
+        # cycle step crashed, do not chain - the hourly cron is the backstop.
+        if: always() && steps.cycle.outcome == 'success' && steps.cycle.outputs.mode != 'idle'
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
+        run: gh workflow run loop.yml --repo "$GITHUB_REPOSITORY" --ref main

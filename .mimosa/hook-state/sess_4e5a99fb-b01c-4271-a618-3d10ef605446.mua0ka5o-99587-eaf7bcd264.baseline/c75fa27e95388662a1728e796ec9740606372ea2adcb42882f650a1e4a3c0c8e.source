@@ -83,6 +83,19 @@ sections=$(awk '
 
 Validation: ${TARGET} lint, build and test commands pass."
 
+# Guard: a PR whose body is an unfilled stub must not go upstream looking
+# machine-made. Keep the fork PR open and mark the task for a manual rewrite.
+if printf '%s' "$pr_body" | grep -q 'Brief description of what this PR does' \
+   && [ -z "$sections" ]; then
+  echo "stub body detected (no Root cause/Fix/Validation sections) - NOT opening upstream"
+  echo "task marked pr_body_stub - rewrite the body before creating the upstream PR"
+  state=$(state_get)
+  state=$(jq -c --arg t "$TARGET" --arg i "$ISSUE" \
+    '.targets[$t].tasks[$i].status = "pr_body_stub"' <<<"$state")
+  state_set "$state"
+  exit 0
+fi
+
 # upstream PR template (if the repo has one) goes first - some repos require it
 template=""
 tmpl_b64=$(gh api "repos/${UPSTREAM}/contents/.github/pull_request_template.md" --jq .content 2>/dev/null || true)
